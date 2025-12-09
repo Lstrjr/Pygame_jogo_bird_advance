@@ -45,6 +45,18 @@ def salvar_recorde(pontuacao):   #Salva a nova pontuação se for um novo record
 
 record = carregar_recorde()
 
+#sons
+
+colisao_som = pygame.mixer.Sound("audio/colisao.mp3")
+clique_botao = pygame.mixer.Sound("audio/clique.mp3")
+ponto_som = pygame.mixer.Sound("audio/ponto.mp3")
+
+#musica
+
+pygame.mixer.music.load("audio/fundo.mp3") 
+pygame.mixer.music.play(-1) 
+pygame.mixer.music.set_volume(0.3)
+
 #sprites do jogo
 
 #fundo do jogo
@@ -95,6 +107,7 @@ base = pygame.transform.scale(base_imagem, (LARGURA, ALTURA_CAPA))
 
 botao = pygame.image.load("imagem/botao_iniciar.png").convert_alpha()
 BOTAO = pygame.transform.scale(botao, (150, 70))
+
 
 #CLASSE_PÁSSARO 
 
@@ -207,7 +220,6 @@ class Menu:
         return self.botao_rect.collidepoint(pos)
 
 #classe_perdedor
-
 class GameOver:
     def __init__(self):
         self.titulo = FONTE_MENU.render("   ", True, BRANCO)
@@ -290,9 +302,9 @@ class Jogo:
         self.fundo_x1 -= self.fundo_velocidade #loop do fundo
         self.fundo_x2 -= self.fundo_velocidade
 
-        if self.fundo_x1 < -LARGURA:
+        if self.fundo_x1 < - LARGURA:
             self.fundo_x1 = LARGURA
-        if self.fundo_x2 < -LARGURA:
+        if self.fundo_x2 < - LARGURA:
             self.fundo_x2 = LARGURA
           
         self.passaro.atualizar()
@@ -310,18 +322,23 @@ class Jogo:
                 if salvar_recorde(self.pontuacao):
                     record = self.pontuacao 
                 
+                colisao_som.play()
+
                 self.estado = "gameover"
                 return 
 
         
         for obst in self.obstaculos: #pontuaçao ao nao colidir
+            
             if obst.topo_rect.right < self.passaro.rect.left and not hasattr(obst, "pontuado"):
                 obst.pontuado = True
                 self.pontuacao += 1
+                ponto_som.play()
 
     def desenhar(self):
                 
         TELA.blit(fundo_img, (self.fundo_x1, 0)) #desenha a tela de fundo repetindo-a
+
         TELA.blit(fundo_img, (self.fundo_x2, 0))
 
         for obst in self.obstaculos:
@@ -337,8 +354,15 @@ class Jogo:
 
         
         placar_texto = FONTE.render(f"Pontos: {self.pontuacao}", True, BRANCO) # Placar 
-        pygame.draw.rect(TELA, LARANJA, (LARGURA - 150, 10, 140, 40), border_radius=8)
-        TELA.blit(placar_texto, (LARGURA - 140, 18))
+        rect_x_start = LARGURA - 150
+        rect_width = 140
+        pygame.draw.rect(TELA, LARANJA, (rect_x_start, 10, rect_width, 40), border_radius=8)
+
+        ##pygame.draw.rect(TELA, LARANJA, (LARGURA - 150, 10, 140, 40), border_radius=8)
+        
+        rect_center_x = rect_x_start + (rect_width // 2)
+        text_x = rect_center_x - placar_texto.get_width() // 2
+        TELA.blit(placar_texto, (text_x, 18))
 
         pygame.display.update()
 
@@ -354,12 +378,14 @@ while True:
 
         if jogo.estado == "menu":
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                clique_botao.play()
                 jogo.estado = "jogando"
             
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: 
                     pos_mouse = event.pos
                     if jogo.menu.verificar_clique(pos_mouse):
+                        clique_botao.play()
                         jogo.estado = "jogando"
 
         elif jogo.estado == "jogando":
@@ -386,3 +412,5 @@ while True:
         jogo.game_over.exibir(TELA, jogo.pontuacao, record)
         
     RELOGIO.tick(FPS)
+
+    
